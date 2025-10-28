@@ -1,69 +1,101 @@
-import React, { useRef, useState } from 'react'
-import dp from "../assets/dp.webp"
-import { IoCameraOutline } from "react-icons/io5";
-import { useDispatch, useSelector } from 'react-redux';
-import { IoIosArrowRoundBack } from "react-icons/io";
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { serverUrl } from '../main';
-import { setUserData } from '../redux/userSlice';
-function Profile() {
-    let {userData}=useSelector(state=>state.user)
-    let dispatch=useDispatch()
-    let navigate=useNavigate()
-let [name,setName]=useState(userData.name || "")
-let [frontendImage,setFrontendImage]=useState(userData.image || dp)
-let [backendImage,setBackendImage]=useState(null)
-let image=useRef()
-let [saving,setSaving]=useState(false)
-const handleImage=(e)=>{
-    let file=e.target.files[0]
-    setBackendImage(file)
-    setFrontendImage(URL.createObjectURL(file))
-}
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUserData } from "../redux/userSlice";
 
-const handleProfile=async (e)=>{
-   
-e.preventDefault()
-setSaving(true)
-try {
+const Profile = ({ user, serverUrl }) => {
+  const [name, setName] = useState(user?.name || "");
+  const [backendImage, setBackendImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(user?.image || "");
+  const [saving, setSaving] = useState(false);
 
-    let formData=new FormData()
-    formData.append("name",name)
-    if(backendImage){
-        formData.append("image",backendImage) 
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setBackendImage(file);
+    setPreviewImage(URL.createObjectURL(file));
+  };
+
+  const handleProfile = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      if (backendImage) {
+        formData.append("image", backendImage);
+      }
+
+      const token = localStorage.getItem("token"); // ✅ get token from localStorage
+
+      const result = await axios.put(`${serverUrl}/api/user/profile`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          token: token, // ✅ send JWT token to backend
+        },
+        withCredentials: true,
+      });
+
+      dispatch(setUserData(result.data));
+      setSaving(false);
+      navigate("/");
+    } catch (error) {
+      console.log("Profile update error:", error);
+      setSaving(false);
     }
-    let result=await axios.put(`${serverUrl}/api/user/profile`,formData,{withCredentials:true})
-    setSaving(false)
-    dispatch(setUserData(result.data))
-    navigate("/")
-} catch (error) {
-    console.log(error)
-    setSaving(false)
-}
-}
-  return (
-    <div className='w-full h-[100vh] bg-slate-200 flex flex-col justify-center items-center gap-[20px]'>
-        <div className='fixed top-[20px] left-[20px] cursor-pointer' onClick={()=>navigate("/")}>
-        <IoIosArrowRoundBack className='w-[50px] h-[50px] text-gray-600'/>
-        </div>
-     <div className=' bg-white rounded-full border-4 border-[#20c7ff] shadow-gray-400 shadow-lg  relative' onClick={()=>image.current.click()}>
-<div className='w-[200px] h-[200px] rounded-full overflow-hidden flex justify-center items-center'>
-<img src={frontendImage} alt="" className='h-[100%]'/>
-</div>
-<div className='absolute bottom-4  text-gray-700 right-4 w-[35px] h-[35px] rounded-full bg-[#20c7ff] flex justify-center items-center shadow-gray-400 shadow-lg'>
-<IoCameraOutline className=' text-gray-700  w-[25px] h-[25px]'/>
-</div>
-     </div>
-     <form className='w-[95%]  max-w-[500px] flex flex-col gap-[20px] items-center justify-center' onSubmit={handleProfile}>
-        <input type="file" accept='image/*' ref={image} hidden onChange={handleImage}/>
-        <input type="text" placeholder="Enter your name" className='w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[10px] bg-[white] rounded-lg shadow-gray-400 shadow-lg text-gray-700 text-[19px]' onChange={(e)=>setName(e.target.value)} value={name}/>
-        <input type="text"  readOnly className='w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[10px] bg-[white] rounded-lg shadow-gray-400 shadow-lg text-gray-400 text-[19px]' value={userData?.userName}/>
-        <input type="email" readOnly className='w-[90%] h-[50px] outline-none border-2 border-[#20c7ff] px-[20px] py-[10px] bg-[white] rounded-lg shadow-gray-400 shadow-lg text-gray-400 text-[19px]' value={userData?.email}/>
-        <button className='px-[20px] py-[10px] bg-[#20c7ff] rounded-2xl shadow-gray-400 shadow-lg text-[20px] w-[200px] mt-[20px] font-semibold hover:shadow-inner' disabled={saving}>{saving?"Saving...":"Save Profile"}</button>
-     </form>
-    </div>
-  )
-}
+  };
 
-export default Profile
+  return (
+    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10">
+      <h2 className="text-2xl font-semibold text-center mb-6">Edit Profile</h2>
+
+      <form onSubmit={handleProfile} className="space-y-4">
+        <div className="flex flex-col items-center gap-3">
+          <label htmlFor="image" className="cursor-pointer">
+            <img
+              src={previewImage || "/default-avatar.png"}
+              alt="Profile"
+              className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+            />
+          </label>
+          <input
+            type="file"
+            id="image"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium text-gray-700">Name</label>
+          <input
+            type="text"
+            value={name}
+            placeholder="Enter your name"
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring focus:ring-blue-200"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className={`w-full py-2 rounded-lg text-white ${
+            saving
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {saving ? "Saving..." : "Save Profile"}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default Profile;
