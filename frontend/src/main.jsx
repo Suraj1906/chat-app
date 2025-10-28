@@ -6,7 +6,11 @@ import { BrowserRouter } from 'react-router-dom'
 import {Provider} from "react-redux"
 import { store } from './redux/store.js'
 
-export const serverUrl="http://localhost:8000"
+// ✅ Automatically switch between local and deployed backend
+export const serverUrl =
+  import.meta.env.MODE === "development"
+    ? "http://localhost:8000" // your local backend
+    : "https://chat-app-sigma-ten-72.vercel.app/";
 createRoot(document.getElementById('root')).render(
 <BrowserRouter>
 <Provider store={store}>
