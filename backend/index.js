@@ -36,7 +36,10 @@ app.use("/api/user", userRouter);
 app.use("/api/message", messageRouter);
 
 // ✅ Start server
-server.listen(port, () => {
-  connectDb();
-  console.log(`🚀 Server started on port ${port}`);
-});
+const startServer = async () => {
+  await connectDb();
+  server.listen(port, () => console.log(`✅ Server running on port ${port}`));
+};
+
+startServer();
+
