@@ -10,7 +10,7 @@ import { store } from './redux/store.js'
 export const serverUrl =
   import.meta.env.MODE === "development"
     ? "http://localhost:8000" // your local backend
-    : "https://chat-app-sigma-ten-72.vercel.app";
+    : "https://chat-app-cjl9.onrender.com";
 createRoot(document.getElementById('root')).render(
 <BrowserRouter>
 <Provider store={store}>
